@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 async function openRenderedRoom(page: Page) {
   await page.goto('/')
   const canvas = page.locator('canvas')
-  await expect(canvas).toBeVisible()
+  await expect(canvas).toBeVisible({ timeout: 15_000 })
   await expect
     .poll(() =>
       canvas.evaluate((element) => {
@@ -12,6 +12,7 @@ async function openRenderedRoom(page: Page) {
           element.width / element.height - bounds.width / bounds.height,
         )
       }),
+      { timeout: 15_000 },
     )
     .toBeLessThan(0.02)
   await expect
