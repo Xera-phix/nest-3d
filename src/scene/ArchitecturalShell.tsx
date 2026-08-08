@@ -7,8 +7,8 @@ import { useEditorStore } from '../store/editorStore'
 import { sceneMaterials, SCENE_COLORS } from './materials'
 
 function DimensionMarks() {
-  const widthOffset = ROOM.depth / 2 + 0.25
-  const depthOffset = ROOM.width / 2 + 0.25
+  const widthOffset = ROOM.depth / 2 - 0.15
+  const depthOffset = ROOM.width / 2 - 0.15
 
   return (
     <group position={[0, 0.045, 0]}>
