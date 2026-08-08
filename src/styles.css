@@ -145,6 +145,26 @@ input:focus-visible {
   }
 }
 
+@keyframes reduced-room-crossfade {
+  from {
+    opacity: 0.18;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reduced-plan-crossfade {
+  from {
+    opacity: 0.18;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 .app-header,
 .tool-rail,
 .furniture-list,
@@ -905,6 +925,20 @@ input:focus-visible {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .scene-layer[data-view-mode='room'],
+  .scene-layer[data-view-mode='plan'] {
+    animation-duration: 160ms !important;
+    animation-timing-function: var(--ease);
+  }
+
+  .scene-layer[data-view-mode='room'] {
+    animation-name: reduced-room-crossfade;
+  }
+
+  .scene-layer[data-view-mode='plan'] {
+    animation-name: reduced-plan-crossfade;
   }
 }
 

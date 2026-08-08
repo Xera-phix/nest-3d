@@ -16,10 +16,15 @@ const RoomCanvas = lazy(async () => {
 export function App() {
   useEditorShortcuts()
   const hasSelection = useEditorStore((state) => state.selectedId !== null)
+  const viewMode = useEditorStore((state) => state.viewMode)
 
   return (
     <main className="app-shell" data-has-selection={hasSelection}>
-      <section className="scene-layer" aria-label="Room workspace">
+      <section
+        className="scene-layer"
+        aria-label="Room workspace"
+        data-view-mode={viewMode}
+      >
         <Suspense
           fallback={
             <div className="scene-loading" role="status">

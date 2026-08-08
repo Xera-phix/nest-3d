@@ -128,6 +128,9 @@ export function ArchitecturalShell() {
   const wallGroup = useRef<Group>(null)
   const dimensionGroup = useRef<Group>(null)
   const initialized = useRef(false)
+  const reducedMotion = useRef(
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
   const viewMode = useEditorStore((state) => state.viewMode)
   const select = useEditorStore((state) => state.select)
   const invalidate = useThree((state) => state.invalidate)
@@ -138,6 +141,14 @@ export function ArchitecturalShell() {
     if (!wallGroup.current || !dimensionGroup.current) return
     const wallTarget = viewMode === 'plan' ? 0.055 : roomWallScale
     const dimensionTarget = viewMode === 'plan' ? 1 : 0.001
+
+    if (reducedMotion.current) {
+      wallGroup.current.scale.y = wallTarget
+      dimensionGroup.current.scale.setScalar(dimensionTarget)
+      dimensionGroup.current.visible = dimensionTarget > 0.01
+      initialized.current = true
+      return
+    }
 
     if (!initialized.current) {
       wallGroup.current.scale.y = wallTarget

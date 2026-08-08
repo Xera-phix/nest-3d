@@ -202,15 +202,25 @@ for (const viewport of responsiveViewports) {
   })
 }
 
-test('honors reduced motion while switching views', async ({ page }) => {
+test('honors reduced motion while switching views', async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.setViewportSize({ width: 1024, height: 768 })
   await openRenderedRoom(page)
 
+  const workspace = page.getByRole('region', { name: 'Room workspace' })
   await page.getByRole('button', { name: 'Plan view' }).click()
   await expect(page.getByRole('button', { name: 'Plan view' })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
+  await expect(workspace).toHaveAttribute('data-view-mode', 'plan')
+  await expect(workspace).toHaveCSS(
+    'animation-name',
+    'reduced-plan-crossfade',
+  )
+  await expect(workspace).toHaveCSS('animation-duration', '0.16s')
   await expect(page.locator('canvas')).toBeVisible()
+  await page.screenshot({
+    path: testInfo.outputPath('afterglow-reduced-motion-plan.png'),
+  })
 })
