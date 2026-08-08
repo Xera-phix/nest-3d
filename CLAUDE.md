@@ -41,8 +41,9 @@ Canonical product and design references:
 
 ## Current Status
 
-The first release is implemented and verified as of 2026-08-07. All six tasks
-and every checklist item in the implementation plan are complete.
+The first release is implemented and verified as of 2026-08-08. All six tasks
+and every checklist item in the implementation plan are complete, followed by
+an evidence-driven browser hardening pass.
 
 Implemented capabilities:
 
@@ -57,10 +58,13 @@ Implemented capabilities:
 - Fifty-snapshot bounded undo/redo history and curated layout reset.
 - Perspective Room view and orthographic Plan view with animated camera and wall
   cutaway choreography.
+- Plan dimensions remain visible inside the room edges instead of falling under
+  persistent editor controls.
 - Interruptible guided tour and double-click furniture focus.
 - PNG export with status feedback.
 - Responsive desktop, tablet, and mobile editor layouts.
-- Reduced-motion and reduced-transparency support.
+- Reduced-motion view changes use a 160 ms scene fade with immediate camera and
+  wall state; reduced-transparency support remains available independently.
 - Lazy-loaded 3D scene with a real loading state.
 
 ## Stack
@@ -105,7 +109,7 @@ Generated directories such as `node_modules/`, `dist/`, `test-results/`, and
 
 ## Verified Baseline
 
-The final release gate completed successfully on 2026-08-07:
+The final release gate completed successfully on 2026-08-08:
 
 - `npm run lint`: clean, zero warnings or errors.
 - `npm test`: 6 files and 26 unit/component tests passed.
@@ -126,7 +130,8 @@ The browser suite verifies:
 - Real pointer gestures drag furniture and orbit the camera.
 - Desktop 1440x900, tablet 1024x768, and mobile 390x844 have no horizontal
   overflow.
-- Reduced-motion mode switches views without losing the canvas.
+- Reduced-motion mode switches views with the required 160 ms fade, immediate
+  wall state, and a continuously visible canvas.
 
 Playwright screenshots are generated under `test-results/` during runs and are
 not source artifacts.
@@ -276,6 +281,12 @@ the primary interface.
 8. Parallel file mutations are safe only when target file sets are disjoint.
    Overlapping parallel writes previously concatenated scene source. Serialize
    edits to the same path and compile immediately after broad changes.
+9. Cold lazy-chunk and WebGL initialization can exceed Playwright's default
+  five-second assertion timeout. Keep the explicit 15-second canvas visibility,
+  drawing-buffer aspect, and sampled-pixel readiness budgets aligned.
+10. External Plan dimension marks can sit beneath the desktop inspector and
+   bottom view switch. Keep the labels inset from the room's south and east
+   edges and verify them in real Chromium screenshots.
 
 ## Accessibility and Quality Bar
 
