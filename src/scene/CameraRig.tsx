@@ -66,6 +66,22 @@ export function CameraRig() {
   }, [])
 
   useEffect(() => {
+    const mountedControls = controlsRef.current
+    const handleFurnitureDrag = (event: Event) => {
+      const controls = controlsRef.current
+      if (controls) {
+        controls.enabled = !(event as CustomEvent<boolean>).detail
+      }
+    }
+
+    window.addEventListener('afterglow:furniture-drag', handleFurnitureDrag)
+    return () => {
+      window.removeEventListener('afterglow:furniture-drag', handleFurnitureDrag)
+      if (mountedControls) mountedControls.enabled = true
+    }
+  }, [])
+
+  useEffect(() => {
     if (viewMode !== 'room' || isTouring) return
     const camera = perspectiveRef.current
     const controls = controlsRef.current

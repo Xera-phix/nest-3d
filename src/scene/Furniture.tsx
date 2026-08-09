@@ -16,6 +16,12 @@ import { SCENE_COLORS } from './materials'
 const dragPlane = new Plane(new Vector3(0, 1, 0), 0)
 const dragPoint = new Vector3()
 
+function setFurnitureDragActive(active: boolean) {
+  window.dispatchEvent(
+    new CustomEvent('afterglow:furniture-drag', { detail: active }),
+  )
+}
+
 function Model({ item }: { item: FurnitureItem }) {
   switch (item.kind) {
     case 'bed':
@@ -58,7 +64,10 @@ function FurniturePiece({ item }: { item: FurnitureItem }) {
 
   useEffect(
     () => () => {
-      if (dragging.current) document.body.style.cursor = ''
+      if (dragging.current) {
+        setFurnitureDragActive(false)
+        document.body.style.cursor = ''
+      }
     },
     [],
   )
@@ -71,6 +80,7 @@ function FurniturePiece({ item }: { item: FurnitureItem }) {
     if (!event.ray.intersectPlane(dragPlane, dragPoint)) return
 
     dragging.current = true
+  setFurnitureDragActive(true)
     dragOffset.current.set(
       item.position.x - dragPoint.x,
       0,
@@ -100,6 +110,7 @@ function FurniturePiece({ item }: { item: FurnitureItem }) {
   const endDrag = (event: ThreeEvent<PointerEvent>) => {
     if (!dragging.current) return
     dragging.current = false
+    setFurnitureDragActive(false)
     event.stopPropagation()
     const pointerTarget = event.nativeEvent.target as Element | null
     if (pointerTarget?.hasPointerCapture(event.pointerId)) {

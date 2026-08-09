@@ -115,6 +115,18 @@ test('supports direct furniture dragging', async ({ page }) => {
   const canvas = page.locator('canvas')
   const bounds = await canvas.boundingBox()
   if (!bounds) throw new Error('Room canvas has no bounds')
+  await page.evaluate(() => {
+    document.documentElement.removeAttribute('data-e2e-camera-position')
+    window.addEventListener(
+      'afterglow:camera-change',
+      (event) => {
+        document.documentElement.dataset.e2eCameraPosition = (
+          event as CustomEvent<string>
+        ).detail
+      },
+      { once: true },
+    )
+  })
 
   const bedCenter = {
     x: bounds.x + bounds.width * 0.52,
@@ -133,6 +145,11 @@ test('supports direct furniture dragging', async ({ page }) => {
     page.getByRole('spinbutton', { name: 'Position Z' }).inputValue(),
   ])
   expect(position.join(':')).not.toBe('0.9:0.35')
+  await page.waitForTimeout(250)
+  await expect(
+    page.locator('html'),
+    'dragging furniture must not move the camera',
+  ).not.toHaveAttribute('data-e2e-camera-position')
 })
 
 test('supports camera orbiting', async ({ page }) => {
