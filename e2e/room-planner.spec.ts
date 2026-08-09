@@ -207,6 +207,49 @@ test('resizes the room and restores it through undo', async ({
   await expect(width).toHaveValue('4.2')
 })
 
+test('imports a local image as a room object', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openRenderedRoom(page)
+
+  await page.getByRole('button', { name: 'Add object' }).click()
+  const imageBytes = await page.evaluate(async () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 32
+    canvas.height = 32
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Canvas context is unavailable')
+    context.fillStyle = '#df6a32'
+    context.fillRect(0, 0, 32, 32)
+    context.fillStyle = '#f7e8cf'
+    context.fillRect(8, 8, 16, 16)
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(
+        (value) => (value ? resolve(value) : reject(new Error('PNG failed'))),
+        'image/png',
+      ),
+    )
+    return [...new Uint8Array(await blob.arrayBuffer())]
+  })
+  await page.getByLabel('Object image').setInputFiles({
+    name: 'reference-chair.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(imageBytes),
+  })
+  await expect(page.getByRole('img', { name: 'Object preview' })).toBeVisible()
+  await page.getByRole('textbox', { name: 'Object name' }).fill('Reference chair')
+  await page.getByRole('button', { name: 'Add to room' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Reference chair' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Select Reference chair' })).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  await expect(page.locator('canvas')).toBeVisible()
+  await page.screenshot({
+    path: testInfo.outputPath('afterglow-imported-object.png'),
+  })
+})
+
 const responsiveViewports = [
   { name: 'desktop', width: 1440, height: 900 },
   { name: 'tablet', width: 1024, height: 768 },

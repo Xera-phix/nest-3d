@@ -1,7 +1,7 @@
 import { Edges, Ring } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useThree } from '@react-three/fiber'
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Group, Plane, Vector3 } from 'three'
 import type { FurnitureItem } from '../domain/types'
 import { useEditorStore } from '../store/editorStore'
@@ -11,6 +11,10 @@ import { FloorLampModel } from './models/Lighting'
 import { LoungeModel, RugModel } from './models/Seating'
 import { BookcaseModel } from './models/Storage'
 import { ChairModel, DeskModel } from './models/Workspace'
+import {
+  ImportedObjectModel,
+  ImportedObjectPlaceholder,
+} from './models/ImportedObject'
 import { SCENE_COLORS } from './materials'
 
 const dragPlane = new Plane(new Vector3(0, 1, 0), 0)
@@ -42,6 +46,12 @@ function Model({ item }: { item: FurnitureItem }) {
       return <FloorLampModel />
     case 'plant':
       return <PlantModel />
+    case 'image-object':
+      return (
+        <Suspense fallback={<ImportedObjectPlaceholder item={item} />}>
+          <ImportedObjectModel item={item} />
+        </Suspense>
+      )
   }
 }
 

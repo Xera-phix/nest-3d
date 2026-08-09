@@ -10,6 +10,7 @@ import {
 import type {
   EditorStatus,
   FurnitureItem,
+  ImageObjectInput,
   Position2D,
   RoomDimensions,
   TransformMode,
@@ -91,6 +92,7 @@ interface EditorStore {
     commit?: boolean,
   ) => void
   updateRotation: (id: string, radians: number, commit?: boolean) => void
+  addImageObject: (input: ImageObjectInput) => void
   duplicate: (id: string) => void
   remove: (id: string) => void
   undo: () => void
@@ -125,6 +127,48 @@ function withMutation(
     canUndo: true,
     canRedo: false,
   }
+}
+
+function findAvailablePosition(
+  item: FurnitureItem,
+  furniture: FurnitureItem[],
+  roomDimensions: RoomDimensions,
+) {
+  const xLimit = Math.max(
+    0,
+    roomDimensions.width / 2 - item.footprint.width / 2,
+  )
+  const zLimit = Math.max(
+    0,
+    roomDimensions.depth / 2 - item.footprint.depth / 2,
+  )
+  const candidates: Position2D[] = []
+
+  for (let x = -xLimit; x <= xLimit + 0.001; x += 0.2) {
+    for (let z = -zLimit; z <= zLimit + 0.001; z += 0.2) {
+      candidates.push({
+        x: Number(x.toFixed(2)),
+        z: Number(z.toFixed(2)),
+      })
+    }
+  }
+  candidates.push({ x: 0, z: 0 })
+  candidates.sort(
+    (first, second) =>
+      first.x ** 2 + first.z ** 2 - (second.x ** 2 + second.z ** 2),
+  )
+
+  for (const position of candidates) {
+    const candidate = {
+      ...item,
+      position: clampPosition(item, position, roomDimensions),
+    }
+    if (!findOverlaps([...furniture, candidate]).includes(item.id)) {
+      return candidate.position
+    }
+  }
+
+  return clampPosition(item, { x: 0, z: 0 }, roomDimensions)
 }
 
 export const useEditorStore = create<EditorStore>((set) => ({
@@ -265,6 +309,47 @@ export const useEditorStore = create<EditorStore>((set) => ({
         canUndo: true,
         canRedo: false,
       }
+    }),
+  addImageObject: (input) =>
+    set((state) => {
+      let objectNumber = 1
+      while (
+        state.furniture.some(
+          (item) => item.id === `image-object-${objectNumber}`,
+        )
+      ) {
+        objectNumber += 1
+      }
+
+      const measurement = (value: number, maximum: number) =>
+        snapValue(
+          Math.max(0.1, Math.min(maximum, Number.isFinite(value) ? value : 1)),
+          0.05,
+        )
+      const width = measurement(input.width, state.roomDimensions.width)
+      const depth = measurement(input.depth, state.roomDimensions.depth)
+      const imageObject: FurnitureItem = {
+        id: `image-object-${objectNumber}`,
+        kind: 'image-object',
+        label: input.label.trim() || `Imported object ${objectNumber}`,
+        position: { x: 0, z: 0 },
+        rotation: 0,
+        footprint: { width, depth },
+        scale: 1,
+        imageSource: input.imageSource,
+        modelHeight: measurement(input.height, state.roomDimensions.height),
+      }
+      imageObject.position = findAvailablePosition(
+        imageObject,
+        state.furniture,
+        state.roomDimensions,
+      )
+
+      return withMutation(
+        state,
+        [...state.furniture, imageObject],
+        imageObject.id,
+      )
     }),
   duplicate: (id) =>
     set((state) => {

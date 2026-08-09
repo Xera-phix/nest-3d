@@ -38,6 +38,35 @@ describe('editor store', () => {
     )
   })
 
+  it('imports an image object and removes it through undo', () => {
+    useEditorStore.getState().addImageObject({
+      label: 'Reading chair reference',
+      imageSource: 'data:image/png;base64,cHJveHk=',
+      width: 0.9,
+      depth: 0.8,
+      height: 1.1,
+    })
+
+    const state = useEditorStore.getState()
+    const imported = state.furniture.find((entry) => entry.kind === 'image-object')
+    expect(imported).toMatchObject({
+      id: 'image-object-1',
+      label: 'Reading chair reference',
+      footprint: { width: 0.9, depth: 0.8 },
+      imageSource: 'data:image/png;base64,cHJveHk=',
+      modelHeight: 1.1,
+    })
+    expect(state.selectedId).toBe('image-object-1')
+    expect(state.overlapIds).not.toContain('image-object-1')
+
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore
+        .getState()
+        .furniture.some((entry) => entry.kind === 'image-object'),
+    ).toBe(false)
+  })
+
   it('restores deletion through undo and reapplies it through redo', () => {
     useEditorStore.getState().remove('bed')
     expect(item('bed')).toBeUndefined()

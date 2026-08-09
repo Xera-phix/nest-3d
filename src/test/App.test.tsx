@@ -10,6 +10,11 @@ vi.mock('../scene/RoomCanvas', () => ({
   ),
 }))
 
+vi.mock('../lib/imageImport', () => ({
+  importImageFile: vi.fn(async () => 'data:image/webp;base64,cHJveHk='),
+  importImageUrl: vi.fn(async () => 'data:image/webp;base64,cHJveHk='),
+}))
+
 describe('Afterglow editor shell', () => {
   beforeEach(() => {
     useEditorStore.getState().reset()
@@ -86,5 +91,30 @@ describe('Afterglow editor shell', () => {
     await user.click(screen.getByRole('button', { name: 'Reset layout' }))
     expect(useEditorStore.getState().selectedId).toBeNull()
     expect(useEditorStore.getState().furniture).toHaveLength(9)
+  })
+
+  it('imports a local image as a selected room object', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Add object' }))
+    expect(
+      screen.getByRole('dialog', { name: 'Import image proxy' }),
+    ).toBeVisible()
+
+    await user.upload(
+      screen.getByLabelText('Object image'),
+      new File(['image'], 'reference-chair.png', { type: 'image/png' }),
+    )
+    await screen.findByRole('img', { name: 'Object preview' })
+    const objectName = screen.getByRole('textbox', { name: 'Object name' })
+    await user.clear(objectName)
+    await user.type(objectName, 'Reference chair')
+    await user.click(screen.getByRole('button', { name: 'Add to room' }))
+
+    expect(
+      screen.getByRole('heading', { name: 'Reference chair' }),
+    ).toBeVisible()
+    expect(useEditorStore.getState().furniture).toHaveLength(10)
   })
 })

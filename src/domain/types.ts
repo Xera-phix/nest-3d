@@ -12,6 +12,7 @@ export type FurnitureKind =
   | 'side-table'
   | 'floor-lamp'
   | 'plant'
+  | 'image-object'
 
 export interface Position2D {
   x: number
@@ -36,6 +37,16 @@ export interface FurnitureItem {
   }
   scale: number
   collidable?: boolean
+  imageSource?: string
+  modelHeight?: number
+}
+
+export interface ImageObjectInput {
+  label: string
+  imageSource: string
+  width: number
+  depth: number
+  height: number
 }
 
 export interface EditorStatus {

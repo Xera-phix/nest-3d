@@ -424,8 +424,26 @@ input:focus-visible {
   font-weight: 600;
 }
 
-.furniture-list__header span:last-child {
+.furniture-list__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.furniture-list__header-actions > span {
   font-family: 'IBM Plex Mono', monospace;
+}
+
+.furniture-list__header-actions button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--color-blueprint-dark);
+  background: transparent;
+  place-items: center;
 }
 
 .furniture-list ul {
@@ -440,7 +458,7 @@ input:focus-visible {
   margin-top: 1px;
 }
 
-.furniture-list button {
+.furniture-list li button {
   width: 100%;
   min-height: 38px;
   padding: 0 9px;
@@ -449,7 +467,7 @@ input:focus-visible {
   text-align: left;
 }
 
-.furniture-list button span {
+.furniture-list li button span {
   overflow: hidden;
   font-size: 0.73rem;
   font-weight: 500;
@@ -457,7 +475,7 @@ input:focus-visible {
   white-space: nowrap;
 }
 
-.furniture-list button[aria-current='true'] {
+.furniture-list li button[aria-current='true'] {
   color: oklch(1 0 0);
   background: var(--color-blueprint);
 }
@@ -755,6 +773,249 @@ input:focus-visible {
   clip-path: inset(50%);
 }
 
+.dialog-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  padding: 18px;
+  background: oklch(0.235 0.018 245 / 0.42);
+  place-items: center;
+}
+
+.import-dialog {
+  width: min(540px, calc(100vw - 36px));
+  max-height: calc(100vh - 36px);
+  padding: 18px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-ink);
+  background: var(--color-surface-solid);
+  box-shadow: var(--shadow-panel);
+}
+
+.import-dialog__heading,
+.import-dialog__actions,
+.import-mode,
+.import-file-picker,
+.dialog-button {
+  display: flex;
+  align-items: center;
+}
+
+.import-dialog__heading {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.import-dialog h2 {
+  margin: 3px 0 0;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 1.32rem;
+  font-weight: 500;
+}
+
+.import-mode {
+  height: 44px;
+  margin-top: 18px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  gap: 3px;
+}
+
+.import-mode button {
+  display: flex;
+  width: 50%;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 3px;
+  gap: 7px;
+  color: var(--color-ink);
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.import-mode button[aria-pressed='true'] {
+  color: oklch(1 0 0);
+  background: var(--color-blueprint);
+}
+
+.import-source-row {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  margin-top: 14px;
+  gap: 14px;
+}
+
+.import-preview {
+  display: grid;
+  width: 128px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-muted);
+  background: var(--color-canvas);
+  place-items: center;
+}
+
+.import-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.import-source-control {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.import-file-picker {
+  min-width: 0;
+  height: 42px;
+  padding: 0 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  gap: 8px;
+  color: var(--color-blueprint-dark);
+  background: oklch(1 0 0);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.import-file-picker span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-file-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.import-text-field {
+  display: grid;
+  gap: 5px;
+  color: var(--color-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.import-text-field input {
+  width: 100%;
+  height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-ink);
+  background: oklch(1 0 0);
+  font-size: 0.74rem;
+}
+
+.import-dimensions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 16px 0 0;
+  padding: 14px 0 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  gap: 9px;
+}
+
+.import-dimensions legend {
+  padding: 0 0 8px;
+  color: var(--color-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.import-dimensions > label {
+  display: grid;
+  gap: 5px;
+}
+
+.import-dimensions > label > span:first-child {
+  color: var(--color-muted);
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.import-number-field {
+  display: grid;
+  grid-template-columns: 1fr 24px;
+  align-items: center;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: oklch(1 0 0);
+}
+
+.import-number-field input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 3px 0 9px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.import-number-field > span {
+  color: var(--color-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+}
+
+.import-error {
+  margin: 12px 0 0;
+  color: var(--color-action-dark);
+  font-size: 0.7rem;
+}
+
+.import-dialog__actions {
+  justify-content: flex-end;
+  margin-top: 18px;
+  gap: 7px;
+}
+
+.dialog-button {
+  justify-content: center;
+  min-width: 100px;
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  gap: 7px;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.dialog-button--primary {
+  border-color: var(--color-blueprint);
+  color: oklch(1 0 0);
+  background: var(--color-blueprint);
+}
+
+.dialog-button:disabled {
+  opacity: 0.5;
+}
+
 @media (max-width: 1099px) {
   .app-header {
     grid-template-columns: minmax(130px, 1fr) auto;
@@ -857,7 +1118,7 @@ input:focus-visible {
     margin-top: 0;
   }
 
-  .furniture-list button {
+  .furniture-list li button {
     width: 44px;
     min-width: 44px;
     height: 40px;
@@ -866,7 +1127,7 @@ input:focus-visible {
     padding: 0;
   }
 
-  .furniture-list button span {
+  .furniture-list li button span {
     position: absolute;
     width: 1px;
     height: 1px;

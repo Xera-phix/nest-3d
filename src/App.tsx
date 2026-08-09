@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useEditorShortcuts } from './hooks/useEditorShortcuts'
 import { useEditorStore } from './store/editorStore'
 import { AppHeader } from './ui/AppHeader'
 import { FurnitureList } from './ui/FurnitureList'
 import { Inspector } from './ui/Inspector'
+import { ImportObjectDialog } from './ui/ImportObjectDialog'
 import { StatusToast } from './ui/StatusToast'
 import { ToolRail } from './ui/ToolRail'
 import { ViewSwitch } from './ui/ViewSwitch'
@@ -15,6 +16,7 @@ const RoomCanvas = lazy(async () => {
 
 export function App() {
   useEditorShortcuts()
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const hasSelection = useEditorStore((state) => state.selectedId !== null)
   const viewMode = useEditorStore((state) => state.viewMode)
 
@@ -38,10 +40,14 @@ export function App() {
       </section>
       <AppHeader />
       <ToolRail />
-      <FurnitureList />
+      <FurnitureList onAddObject={() => setIsImportOpen(true)} />
       <Inspector />
       <ViewSwitch />
       <StatusToast />
+      <ImportObjectDialog
+        open={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+      />
     </main>
   )
 }
