@@ -1,5 +1,5 @@
 import { ContactShadows, PerformanceMonitor } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import type { WebGLRenderer } from 'three'
 import { useEditorStore } from '../store/editorStore'
@@ -10,11 +10,24 @@ import { Furniture } from './Furniture'
 import { SCENE_COLORS } from './materials'
 import { TransformController } from './TransformController'
 
+function SceneReadyFrame() {
+  const invalidate = useThree((state) => state.invalidate)
+
+  useEffect(() => {
+    invalidate()
+    const frame = requestAnimationFrame(() => invalidate())
+    return () => cancelAnimationFrame(frame)
+  }, [invalidate])
+
+  return null
+}
+
 function RoomScene() {
   const sceneRevision = useEditorStore((state) => state.sceneRevision)
 
   return (
     <>
+      <SceneReadyFrame />
       <color attach="background" args={[SCENE_COLORS.mist]} />
       <fog attach="fog" args={[SCENE_COLORS.mist, 10, 20]} />
       <hemisphereLight args={['#dfeeff', '#9b8871', 1.35]} />
