@@ -19,10 +19,11 @@ changes or unrelated work in a dirty worktree.
 
 ## Product
 
-Afterglow is a portfolio-grade 3D room planner for a fixed 4.2 m by 3.4 m studio.
-The first screen is the working room, not a landing page. The experience should
-feel tactile, precise, calm, and materially rich, like an architect's physical
-model rather than a game editor or generic SaaS dashboard.
+Afterglow is a portfolio-grade 3D room planner for a configurable rectangular
+studio that defaults to 4.2 m by 3.4 m. The first screen is the working room,
+not a landing page. The experience should feel tactile, precise, calm, and
+materially rich, like an architect's physical model rather than a game editor
+or generic SaaS dashboard.
 
 The target user is a design-conscious renter or homeowner comparing furniture
 arrangements before moving anything heavy. The core loop is immediate:
@@ -55,6 +56,11 @@ Implemented capabilities:
 - Furniture selection, direct floor-plane dragging, transform gizmos, numeric
   inspector fields, snapping, room bounds, collision warnings, duplicate, and
   delete.
+- Direct furniture dragging is isolated from camera orbiting.
+- Editable room width, depth, and height with dynamic geometry, bounds, camera
+  framing, Plan measurements, history, and reset behavior.
+- Local PNG/JPEG/WebP and CORS-enabled image URL imports as dimensioned,
+  textured 3D proxy objects with automatic image downscaling and open placement.
 - Fifty-snapshot bounded undo/redo history and curated layout reset.
 - Perspective Room view and orthographic Plan view with animated camera and wall
   cutaway choreography.
@@ -66,6 +72,8 @@ Implemented capabilities:
 - Reduced-motion view changes use a 160 ms scene fade with immediate camera and
   wall state; reduced-transparency support remains available independently.
 - Lazy-loaded 3D scene with a real loading state.
+- Commit-boundary shadow refreshes, memoized furniture pieces, and adaptive DPR
+  keep camera and direct-manipulation frames lighter.
 
 ## Stack
 
@@ -85,7 +93,7 @@ Runtime used during implementation:
 
 ```powershell
 npm install
-npm run dev -- --host 127.0.0.1 --port 4173
+npx vite --host=127.0.0.1 --port=4173
 npm run lint
 npm test
 npm run build
@@ -112,9 +120,9 @@ Generated directories such as `node_modules/`, `dist/`, `test-results/`, and
 The final release gate completed successfully on 2026-08-08:
 
 - `npm run lint`: clean, zero warnings or errors.
-- `npm test`: 6 files and 26 unit/component tests passed.
+- `npm test`: 6 files and 32 unit/component tests passed.
 - `npm run build`: TypeScript and Vite production build passed.
-- `npm run test:e2e`: 7 Chromium journeys passed.
+- `npm run test:e2e`: 9 Chromium journeys passed.
 
 The browser suite verifies:
 
@@ -127,7 +135,11 @@ The browser suite verifies:
   view switch.
 - Reset restores the curated layout.
 - Export downloads `afterglow-layout.png`.
-- Real pointer gestures drag furniture and orbit the camera.
+- Real pointer gestures drag furniture without moving the camera; gestures away
+  from furniture still orbit the camera.
+- Room dimensions rebuild scene geometry and framing, clamp furniture, and
+  restore through Undo.
+- A real local PNG import creates and selects a renderable image proxy.
 - Desktop 1440x900, tablet 1024x768, and mobile 390x844 have no horizontal
   overflow.
 - Reduced-motion mode switches views with the required 160 ms fade, immediate
@@ -145,17 +157,19 @@ not source artifacts.
 - `src/domain/catalog.ts`: curated nine-piece starting layout and validation.
 
 Keep spatial math pure and testable. Furniture positions use the X/Z floor
-plane; Y is vertical. The room interior is 4.2 m wide, 3.4 m deep, and 2.65 m
-high. Rugs are non-collidable; collisions warn but never hard-block movement.
+plane; Y is vertical. The default room interior is 4.2 m wide, 3.4 m deep, and
+2.65 m high; current dimensions live in the store and are bounded by
+`ROOM_LIMITS`. Rugs are non-collidable; collisions warn but never hard-block
+movement.
 
 ### Store
 
 - `src/store/editorStore.ts`: the single editor store and history boundary.
 
-The store owns furniture, selection, transform mode, view mode, snapping,
-overlap IDs, tour state, status, and undo/redo snapshots. Store history only at
-committed transform boundaries, never for every pointer frame. Keep snapshots
-serializable and capped at 50.
+The store owns furniture, room dimensions, selection, transform mode, view
+mode, snapping, overlap IDs, tour state, status, scene revision, and undo/redo
+snapshots. Store history only at committed transform boundaries, never for
+every pointer frame. Keep snapshots serializable and capped at 50.
 
 Important tour invariant: `setTouring(true)` atomically enters Room view and
 keeps `isTouring` true. Explicit `setViewMode(...)` cancels an active tour.
@@ -178,6 +192,10 @@ keeps `isTouring` true. Explicit `setViewMode(...)` cancels an active tour.
 The scene uses `frameloop="demand"`. Any state or camera path that changes
 visible pixels must invalidate frames until it settles.
 
+Directional shadow maps are frozen between committed `sceneRevision` changes,
+and contact shadows render once per revision. Preview transforms must not bump
+the revision; commit, Undo/Redo, resize, import, duplicate, delete, and reset do.
+
 Do not co-locate exported camera math with React components; Fast Refresh lint
 requires pure helpers to remain in `cameraMath.ts`.
 
@@ -188,8 +206,10 @@ requires pure helpers to remain in `cameraMath.ts`.
 - `src/ui/ToolRail.tsx`: Select, Move, Rotate, and Tour.
 - `src/ui/FurnitureList.tsx`: accessible object selection.
 - `src/ui/Inspector.tsx`: precise transforms and object actions.
+- `src/ui/ImportObjectDialog.tsx`: local file/URL proxy import and dimensions.
 - `src/ui/ViewSwitch.tsx`: Room/Plan segmented control.
 - `src/ui/StatusToast.tsx`: polite export and error announcements.
+- `src/lib/imageImport.ts`: type/size validation and 1600 px WebP preparation.
 - `src/hooks/useEditorShortcuts.ts`: global keyboard routing with editable-field
   protection.
 
@@ -287,6 +307,15 @@ the primary interface.
 10. External Plan dimension marks can sit beneath the desktop inspector and
    bottom view switch. Keep the labels inset from the room's south and east
    edges and verify them in real Chromium screenshots.
+11. React Three Fiber and OrbitControls receive the same canvas pointer stream.
+  Direct furniture drag dispatches `afterglow:furniture-drag` synchronously;
+  `CameraRig` owns the controls ref and disables it until release or cancel.
+12. Expensive shadows do not need to rerender while the camera moves or an
+  object previews a transform. Keep `sceneRevision` aligned with committed
+  mutations and explicitly invalidate after marking the frozen shadow map.
+13. Image imports are textured physical proxies, not generated 3D meshes.
+  Local and fetched images are validated, capped at 5 MB, and downscaled to
+  1600 px. Remote URLs require the source server to permit browser CORS.
 
 ## Accessibility and Quality Bar
 
@@ -304,14 +333,13 @@ the primary interface.
 ## Non-Goals for This Release
 
 - Arbitrary wall drawing or nonrectangular rooms.
-- Editable room dimensions.
-- User-uploaded 3D models.
+- True single-image 3D reconstruction or arbitrary glTF/OBJ model uploads.
 - Accounts, persistence, collaboration, or cloud saving.
 - Automatic layout generation.
 - Photorealistic path tracing.
 
-The current boundaries should support editable dimensions or a broader catalog
-later, but do not build those systems speculatively.
+The current boundaries should support a broader procedural catalog or persisted
+layouts later, but do not build those systems speculatively.
 
 ## Resume Checklist
 
