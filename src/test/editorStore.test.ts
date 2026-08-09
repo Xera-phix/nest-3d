@@ -60,6 +60,36 @@ describe('editor store', () => {
     expect(state.canRedo).toBe(false)
   })
 
+  it('resizes the room, clamps furniture, and restores dimensions through history', () => {
+    useEditorStore.getState().updateRoomDimensions({
+      width: 3.6,
+      depth: 3,
+      height: 2.8,
+    })
+
+    expect(useEditorStore.getState().roomDimensions).toEqual({
+      width: 3.6,
+      depth: 3,
+      height: 2.8,
+    })
+    expect(item('floor-lamp')?.position).toEqual({ x: 1.63, z: 1.33 })
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().roomDimensions).toEqual({
+      width: 4.2,
+      depth: 3.4,
+      height: 2.65,
+    })
+    expect(item('floor-lamp')?.position).toEqual({ x: 1.88, z: 1.48 })
+
+    useEditorStore.getState().reset()
+    expect(useEditorStore.getState().roomDimensions).toEqual({
+      width: 4.2,
+      depth: 3.4,
+      height: 2.65,
+    })
+  })
+
   it('starts a tour in room view without cancelling it', () => {
     useEditorStore.getState().setViewMode('plan')
     useEditorStore.getState().setTouring(true)

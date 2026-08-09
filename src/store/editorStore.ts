@@ -1,10 +1,17 @@
 import { create } from 'zustand'
 import { INITIAL_FURNITURE } from '../domain/catalog'
-import { clampPosition, findOverlaps, snapValue } from '../domain/room'
+import {
+  clampPosition,
+  findOverlaps,
+  normalizeRoomDimensions,
+  ROOM,
+  snapValue,
+} from '../domain/room'
 import type {
   EditorStatus,
   FurnitureItem,
   Position2D,
+  RoomDimensions,
   TransformMode,
   ViewMode,
 } from '../domain/types'
@@ -29,8 +36,39 @@ function furnitureChanged(first: FurnitureItem[], second: FurnitureItem[]) {
   return JSON.stringify(first) !== JSON.stringify(second)
 }
 
+function cloneRoomDimensions(roomDimensions: RoomDimensions) {
+  return { ...roomDimensions }
+}
+
+interface EditorSnapshot {
+  furniture: FurnitureItem[]
+  roomDimensions: RoomDimensions
+}
+
+function cloneSnapshot(
+  roomDimensions: RoomDimensions,
+  furniture: FurnitureItem[],
+): EditorSnapshot {
+  return {
+    furniture: cloneFurniture(furniture),
+    roomDimensions: cloneRoomDimensions(roomDimensions),
+  }
+}
+
+function roomDimensionsChanged(
+  first: RoomDimensions,
+  second: RoomDimensions,
+) {
+  return (
+    first.width !== second.width ||
+    first.depth !== second.depth ||
+    first.height !== second.height
+  )
+}
+
 interface EditorStore {
   furniture: FurnitureItem[]
+  roomDimensions: RoomDimensions
   selectedId: string | null
   transformMode: TransformMode
   viewMode: ViewMode
@@ -40,12 +78,13 @@ interface EditorStore {
   status: EditorStatus | null
   canUndo: boolean
   canRedo: boolean
-  past: FurnitureItem[][]
-  future: FurnitureItem[][]
+  past: EditorSnapshot[]
+  future: EditorSnapshot[]
   interactionSnapshot: FurnitureItem[] | null
   select: (id: string | null) => void
   setTransformMode: (mode: TransformMode) => void
   setViewMode: (mode: ViewMode) => void
+  updateRoomDimensions: (dimensions: RoomDimensions) => void
   updatePosition: (
     id: string,
     position: Position2D,
@@ -68,7 +107,10 @@ function withMutation(
 ) {
   if (!furnitureChanged(state.furniture, furniture)) return state
 
-  const past = [...state.past, cloneFurniture(state.furniture)].slice(
+  const past = [
+    ...state.past,
+    cloneSnapshot(state.roomDimensions, state.furniture),
+  ].slice(
     -HISTORY_LIMIT,
   )
 
@@ -87,6 +129,7 @@ function withMutation(
 
 export const useEditorStore = create<EditorStore>((set) => ({
   furniture: initialFurniture(),
+  roomDimensions: cloneRoomDimensions(ROOM),
   selectedId: null,
   transformMode: 'select',
   viewMode: 'room',
@@ -103,6 +146,37 @@ export const useEditorStore = create<EditorStore>((set) => ({
   select: (selectedId) => set({ selectedId }),
   setTransformMode: (transformMode) => set({ transformMode }),
   setViewMode: (viewMode) => set({ viewMode, isTouring: false }),
+  updateRoomDimensions: (dimensions) =>
+    set((state) => {
+      const roomDimensions = normalizeRoomDimensions(
+        dimensions,
+        state.roomDimensions,
+      )
+      if (!roomDimensionsChanged(state.roomDimensions, roomDimensions)) {
+        return state
+      }
+
+      const furniture = state.furniture.map((item) => ({
+        ...item,
+        position: clampPosition(item, item.position, roomDimensions),
+      }))
+      const past = [
+        ...state.past,
+        cloneSnapshot(state.roomDimensions, state.furniture),
+      ].slice(-HISTORY_LIMIT)
+
+      return {
+        ...state,
+        roomDimensions,
+        furniture,
+        overlapIds: findOverlaps(furniture),
+        past,
+        future: [],
+        interactionSnapshot: null,
+        canUndo: true,
+        canRedo: false,
+      }
+    }),
   updatePosition: (id, position, commit = true) =>
     set((state) => {
       const item = state.furniture.find((entry) => entry.id === id)
@@ -114,7 +188,11 @@ export const useEditorStore = create<EditorStore>((set) => ({
             z: snapValue(position.z, TRANSLATION_SNAP),
           }
         : position
-      const clampedPosition = clampPosition(item, snappedPosition)
+      const clampedPosition = clampPosition(
+        item,
+        snappedPosition,
+        state.roomDimensions,
+      )
       const furniture = state.furniture.map((entry) =>
         entry.id === id ? { ...entry, position: clampedPosition } : entry,
       )
@@ -133,9 +211,10 @@ export const useEditorStore = create<EditorStore>((set) => ({
       if (!furnitureChanged(historyBase, furniture)) {
         return { ...state, interactionSnapshot: null }
       }
-      const past = [...state.past, cloneFurniture(historyBase)].slice(
-        -HISTORY_LIMIT,
-      )
+      const past = [
+        ...state.past,
+        cloneSnapshot(state.roomDimensions, historyBase),
+      ].slice(-HISTORY_LIMIT)
 
       return {
         ...state,
@@ -172,9 +251,10 @@ export const useEditorStore = create<EditorStore>((set) => ({
       if (!furnitureChanged(historyBase, furniture)) {
         return { ...state, interactionSnapshot: null }
       }
-      const past = [...state.past, cloneFurniture(historyBase)].slice(
-        -HISTORY_LIMIT,
-      )
+      const past = [
+        ...state.past,
+        cloneSnapshot(state.roomDimensions, historyBase),
+      ].slice(-HISTORY_LIMIT)
 
       return {
         ...state,
@@ -198,10 +278,14 @@ export const useEditorStore = create<EditorStore>((set) => ({
         ...source,
         id: copyId,
         label: `${source.label} copy`,
-        position: clampPosition(source, {
-          x: source.position.x + 0.15,
-          z: source.position.z + 0.15,
-        }),
+        position: clampPosition(
+          source,
+          {
+            x: source.position.x + 0.15,
+            z: source.position.z + 0.15,
+          },
+          state.roomDimensions,
+        ),
       }
 
       return withMutation(state, [...state.furniture, copy], copyId)
@@ -220,15 +304,16 @@ export const useEditorStore = create<EditorStore>((set) => ({
       const previous = state.past.at(-1)
       if (!previous) return state
       const past = state.past.slice(0, -1)
-      const future = [cloneFurniture(state.furniture), ...state.future].slice(
-        0,
-        HISTORY_LIMIT,
-      )
-      const furniture = cloneFurniture(previous)
+      const future = [
+        cloneSnapshot(state.roomDimensions, state.furniture),
+        ...state.future,
+      ].slice(0, HISTORY_LIMIT)
+      const furniture = cloneFurniture(previous.furniture)
 
       return {
         ...state,
         furniture,
+        roomDimensions: cloneRoomDimensions(previous.roomDimensions),
         selectedId: furniture.some((item) => item.id === state.selectedId)
           ? state.selectedId
           : null,
@@ -244,14 +329,16 @@ export const useEditorStore = create<EditorStore>((set) => ({
     set((state) => {
       const [next, ...future] = state.future
       if (!next) return state
-      const past = [...state.past, cloneFurniture(state.furniture)].slice(
-        -HISTORY_LIMIT,
-      )
-      const furniture = cloneFurniture(next)
+      const past = [
+        ...state.past,
+        cloneSnapshot(state.roomDimensions, state.furniture),
+      ].slice(-HISTORY_LIMIT)
+      const furniture = cloneFurniture(next.furniture)
 
       return {
         ...state,
         furniture,
+        roomDimensions: cloneRoomDimensions(next.roomDimensions),
         overlapIds: findOverlaps(furniture),
         past,
         future,
@@ -263,6 +350,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   reset: () =>
     set({
       furniture: initialFurniture(),
+      roomDimensions: cloneRoomDimensions(ROOM),
       selectedId: null,
       transformMode: 'select',
       viewMode: 'room',

@@ -18,6 +18,12 @@ export interface Position2D {
   z: number
 }
 
+export interface RoomDimensions {
+  width: number
+  depth: number
+  height: number
+}
+
 export interface FurnitureItem {
   id: string
   kind: FurnitureKind

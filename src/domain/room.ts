@@ -1,9 +1,15 @@
-import type { FurnitureItem, Position2D } from './types'
+import type { FurnitureItem, Position2D, RoomDimensions } from './types'
 
-export const ROOM = {
+export const ROOM: RoomDimensions = {
   width: 4.2,
   depth: 3.4,
   height: 2.65,
+}
+
+export const ROOM_LIMITS = {
+  width: { min: 2.4, max: 12 },
+  depth: { min: 2.4, max: 12 },
+  height: { min: 2, max: 5 },
 } as const
 
 function roundMeasurement(value: number) {
@@ -15,12 +21,43 @@ export function snapValue(value: number, step: number) {
   return roundMeasurement(Math.round(value / step) * step)
 }
 
+export function normalizeRoomDimensions(
+  dimensions: RoomDimensions,
+  fallback: RoomDimensions = ROOM,
+): RoomDimensions {
+  const normalize = (
+    value: number,
+    fallbackValue: number,
+    limits: { min: number; max: number },
+  ) =>
+    snapValue(
+      Math.max(
+        limits.min,
+        Math.min(limits.max, Number.isFinite(value) ? value : fallbackValue),
+      ),
+      0.05,
+    )
+
+  return {
+    width: normalize(dimensions.width, fallback.width, ROOM_LIMITS.width),
+    depth: normalize(dimensions.depth, fallback.depth, ROOM_LIMITS.depth),
+    height: normalize(dimensions.height, fallback.height, ROOM_LIMITS.height),
+  }
+}
+
 export function clampPosition(
   item: FurnitureItem,
   position: Position2D,
+  roomDimensions: RoomDimensions = ROOM,
 ): Position2D {
-  const xLimit = ROOM.width / 2 - item.footprint.width / 2
-  const zLimit = ROOM.depth / 2 - item.footprint.depth / 2
+  const xLimit = Math.max(
+    0,
+    roomDimensions.width / 2 - item.footprint.width / 2,
+  )
+  const zLimit = Math.max(
+    0,
+    roomDimensions.depth / 2 - item.footprint.depth / 2,
+  )
 
   return {
     x: roundMeasurement(Math.max(-xLimit, Math.min(xLimit, position.x))),
