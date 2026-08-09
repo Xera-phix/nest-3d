@@ -82,6 +82,7 @@ interface EditorStore {
   past: EditorSnapshot[]
   future: EditorSnapshot[]
   interactionSnapshot: FurnitureItem[] | null
+  sceneRevision: number
   select: (id: string | null) => void
   setTransformMode: (mode: TransformMode) => void
   setViewMode: (mode: ViewMode) => void
@@ -124,6 +125,7 @@ function withMutation(
     past,
     future: [],
     interactionSnapshot: null,
+    sceneRevision: state.sceneRevision + 1,
     canUndo: true,
     canRedo: false,
   }
@@ -186,6 +188,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   past: [],
   future: [],
   interactionSnapshot: null,
+  sceneRevision: 0,
 
   select: (selectedId) => set({ selectedId }),
   setTransformMode: (transformMode) => set({ transformMode }),
@@ -217,6 +220,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
         past,
         future: [],
         interactionSnapshot: null,
+        sceneRevision: state.sceneRevision + 1,
         canUndo: true,
         canRedo: false,
       }
@@ -267,6 +271,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
         past,
         future: [],
         interactionSnapshot: null,
+        sceneRevision: state.sceneRevision + 1,
         canUndo: true,
         canRedo: false,
       }
@@ -306,6 +311,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
         past,
         future: [],
         interactionSnapshot: null,
+        sceneRevision: state.sceneRevision + 1,
         canUndo: true,
         canRedo: false,
       }
@@ -408,6 +414,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
         canUndo: past.length > 0,
         canRedo: true,
         interactionSnapshot: null,
+        sceneRevision: state.sceneRevision + 1,
       }
     }),
   redo: () =>
@@ -430,10 +437,11 @@ export const useEditorStore = create<EditorStore>((set) => ({
         canUndo: true,
         canRedo: future.length > 0,
         interactionSnapshot: null,
+        sceneRevision: state.sceneRevision + 1,
       }
     }),
   reset: () =>
-    set({
+    set((state) => ({
       furniture: initialFurniture(),
       roomDimensions: cloneRoomDimensions(ROOM),
       selectedId: null,
@@ -448,7 +456,8 @@ export const useEditorStore = create<EditorStore>((set) => ({
       past: [],
       future: [],
       interactionSnapshot: null,
-    }),
+      sceneRevision: state.sceneRevision + 1,
+    })),
   setTouring: (isTouring) =>
     set(isTouring ? { isTouring: true, viewMode: 'room' } : { isTouring: false }),
   setStatus: (status) => set({ status }),

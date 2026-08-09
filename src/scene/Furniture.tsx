@@ -1,7 +1,7 @@
 import { Edges, Ring } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { memo, Suspense, useEffect, useRef, useState } from 'react'
 import { Group, Plane, Vector3 } from 'three'
 import type { FurnitureItem } from '../domain/types'
 import { useEditorStore } from '../store/editorStore'
@@ -55,7 +55,11 @@ function Model({ item }: { item: FurnitureItem }) {
   }
 }
 
-function FurniturePiece({ item }: { item: FurnitureItem }) {
+const FurniturePiece = memo(function FurniturePiece({
+  item,
+}: {
+  item: FurnitureItem
+}) {
   const groupRef = useRef<Group>(null)
   const dragOffset = useRef(new Vector3())
   const dragging = useRef(false)
@@ -202,7 +206,7 @@ function FurniturePiece({ item }: { item: FurnitureItem }) {
       )}
     </group>
   )
-}
+})
 
 export function Furniture() {
   const furniture = useEditorStore((state) => state.furniture)

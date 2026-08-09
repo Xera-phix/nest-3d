@@ -1,6 +1,7 @@
 import { ContactShadows, PerformanceMonitor } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import type { WebGLRenderer } from 'three'
 import { useEditorStore } from '../store/editorStore'
 import { ArchitecturalShell } from './ArchitecturalShell'
 import { getRoomCamera } from './cameraMath'
@@ -10,6 +11,8 @@ import { SCENE_COLORS } from './materials'
 import { TransformController } from './TransformController'
 
 function RoomScene() {
+  const sceneRevision = useEditorStore((state) => state.sceneRevision)
+
   return (
     <>
       <color attach="background" args={[SCENE_COLORS.mist]} />
@@ -21,7 +24,7 @@ function RoomScene() {
         color="#ffd9a3"
         intensity={3.1}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-camera-near={0.5}
         shadow-camera-far={18}
         shadow-camera-left={-5}
@@ -40,12 +43,14 @@ function RoomScene() {
       <Furniture />
       <TransformController />
       <ContactShadows
+        key={sceneRevision}
         position={[0, 0.008, 0]}
         scale={8}
         opacity={0.34}
         blur={2.4}
         far={3.5}
-        resolution={512}
+        frames={1}
+        resolution={256}
         color="#39434a"
       />
     </>
@@ -53,12 +58,23 @@ function RoomScene() {
 }
 
 export function RoomCanvas() {
-  const [dpr, setDpr] = useState(1.5)
+  const [dpr, setDpr] = useState(1.25)
+  const rendererRef = useRef<WebGLRenderer>(null)
+  const invalidateRef = useRef<() => void>(() => undefined)
+  const sceneRevision = useEditorStore((state) => state.sceneRevision)
   const roomDimensions = useEditorStore((state) => state.roomDimensions)
   const initialRoomCamera = getRoomCamera(
     window.innerWidth / Math.max(window.innerHeight, 1),
     roomDimensions,
   )
+
+  useEffect(() => {
+    const renderer = rendererRef.current
+    if (renderer) {
+      renderer.shadowMap.needsUpdate = true
+      invalidateRef.current()
+    }
+  }, [sceneRevision])
 
   return (
     <Canvas
@@ -74,8 +90,12 @@ export function RoomCanvas() {
         powerPreference: 'high-performance',
       }}
       onCreated={({ gl, invalidate, size }) => {
+        rendererRef.current = gl
+        invalidateRef.current = invalidate
         gl.setPixelRatio(dpr)
         gl.setSize(size.width, size.height, false)
+        gl.shadowMap.autoUpdate = false
+        gl.shadowMap.needsUpdate = true
         invalidate()
       }}
       camera={{
@@ -93,7 +113,8 @@ export function RoomCanvas() {
     >
       <PerformanceMonitor
         onDecline={() => setDpr(1)}
-        onIncline={() => setDpr(Math.min(window.devicePixelRatio, 1.75))}
+        onIncline={() => setDpr(Math.min(window.devicePixelRatio, 1.5))}
+        onFallback={() => setDpr(1)}
       />
       <Suspense fallback={null}>
         <RoomScene />

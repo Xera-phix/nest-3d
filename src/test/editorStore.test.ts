@@ -27,6 +27,20 @@ describe('editor store', () => {
     expect(item('desk')?.rotation).toBeCloseTo(Math.PI / 12)
   })
 
+  it('advances scene effects once at a committed transform boundary', () => {
+    const initialRevision = useEditorStore.getState().sceneRevision
+
+    useEditorStore
+      .getState()
+      .updatePosition('bed', { x: 0.75, z: 0.25 }, false)
+    expect(useEditorStore.getState().sceneRevision).toBe(initialRevision)
+
+    useEditorStore
+      .getState()
+      .updatePosition('bed', { x: 0.75, z: 0.25 }, true)
+    expect(useEditorStore.getState().sceneRevision).toBe(initialRevision + 1)
+  })
+
   it('duplicates with a unique id and selects the copy', () => {
     useEditorStore.getState().duplicate('chair')
 
