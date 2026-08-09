@@ -559,6 +559,7 @@ input:focus-visible {
 }
 
 .field-grid label,
+.room-field-grid label,
 .rotation-field {
   position: relative;
   display: grid;
@@ -573,6 +574,26 @@ input:focus-visible {
   background: oklch(1 0 0);
 }
 
+.room-field-grid {
+  display: grid;
+  gap: 7px;
+}
+
+.room-field-grid label {
+  grid-template-columns: 58px 1fr 24px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: oklch(1 0 0);
+}
+
+.room-field-grid label > span:first-child {
+  padding-left: 10px;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
 .field-grid label > span:first-child {
   color: var(--color-muted);
   font-family: 'IBM Plex Mono', monospace;
@@ -581,6 +602,7 @@ input:focus-visible {
 }
 
 .field-grid input,
+.room-field-grid input,
 .rotation-field input {
   width: 100%;
   min-width: 0;
@@ -596,12 +618,14 @@ input:focus-visible {
 }
 
 .field-grid label:focus-within,
+.room-field-grid label:focus-within,
 .rotation-field:focus-within {
   border-color: var(--color-blueprint);
   box-shadow: 0 0 0 3px oklch(0.53 0.2 256 / 0.13);
 }
 
 .field-grid input:focus-visible,
+.room-field-grid input:focus-visible,
 .rotation-field input:focus-visible {
   outline: 0;
 }

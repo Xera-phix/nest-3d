@@ -36,6 +36,18 @@ describe('camera compositions', () => {
     })
   })
 
+  it('expands room and plan framing for larger dimensions', () => {
+    const largerRoom = { width: 6, depth: 4, height: 3 }
+    const roomCamera = getRoomCamera(16 / 9, largerRoom)
+
+    expect(roomCamera.position[0]).toBeGreaterThan(ROOM_CAMERA.position[0])
+    expect(roomCamera.position[2]).toBeGreaterThan(ROOM_CAMERA.position[2])
+    expect(getPlanFrustum(16 / 9, largerRoom)).toEqual({
+      width: 8.5333,
+      height: 4.8,
+    })
+  })
+
   it('focuses above the selected furniture center', () => {
     const bed = INITIAL_FURNITURE.find((item) => item.id === 'bed')
     if (!bed) throw new Error('Bed fixture is missing')

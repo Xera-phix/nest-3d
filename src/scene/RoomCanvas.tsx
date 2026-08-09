@@ -1,6 +1,7 @@
 import { ContactShadows, PerformanceMonitor } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useState } from 'react'
+import { useEditorStore } from '../store/editorStore'
 import { ArchitecturalShell } from './ArchitecturalShell'
 import { getRoomCamera } from './cameraMath'
 import { CameraRig } from './CameraRig'
@@ -53,8 +54,10 @@ function RoomScene() {
 
 export function RoomCanvas() {
   const [dpr, setDpr] = useState(1.5)
+  const roomDimensions = useEditorStore((state) => state.roomDimensions)
   const initialRoomCamera = getRoomCamera(
     window.innerWidth / Math.max(window.innerHeight, 1),
+    roomDimensions,
   )
 
   return (

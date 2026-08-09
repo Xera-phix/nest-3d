@@ -185,6 +185,28 @@ test('supports camera orbiting', async ({ page }) => {
     .not.toBeNull()
 })
 
+test('resizes the room and restores it through undo', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openRenderedRoom(page)
+
+  const width = page.getByRole('spinbutton', { name: 'Room width' })
+  await width.fill('5.5')
+  await width.press('Enter')
+  await expect(page.getByText('5.50 × 3.40 m')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Plan view' }).click()
+  await page.waitForTimeout(1300)
+  await page.screenshot({
+    path: testInfo.outputPath('afterglow-resized-plan.png'),
+  })
+
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(page.getByText('4.20 × 3.40 m')).toBeVisible()
+  await expect(width).toHaveValue('4.2')
+})
+
 const responsiveViewports = [
   { name: 'desktop', width: 1440, height: 900 },
   { name: 'tablet', width: 1024, height: 768 },

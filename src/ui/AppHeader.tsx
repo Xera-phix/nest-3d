@@ -9,6 +9,7 @@ import { downloadCanvas } from '../lib/exportImage'
 import { useEditorStore } from '../store/editorStore'
 
 export function AppHeader() {
+  const roomDimensions = useEditorStore((state) => state.roomDimensions)
   const canUndo = useEditorStore((state) => state.canUndo)
   const canRedo = useEditorStore((state) => state.canRedo)
   const undo = useEditorStore((state) => state.undo)
@@ -44,7 +45,9 @@ export function AppHeader() {
 
       <div className="project-title">
         <span>Marlow studio</span>
-        <span className="project-measure">4.20 × 3.40 m</span>
+        <span className="project-measure">
+          {roomDimensions.width.toFixed(2)} × {roomDimensions.depth.toFixed(2)} m
+        </span>
       </div>
 
       <div className="header-actions" aria-label="Project actions">

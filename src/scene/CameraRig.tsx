@@ -52,10 +52,11 @@ export function CameraRig() {
   const isTouring = useEditorStore((state) => state.isTouring)
   const setTouring = useEditorStore((state) => state.setTouring)
   const setViewMode = useEditorStore((state) => state.setViewMode)
+  const roomDimensions = useEditorStore((state) => state.roomDimensions)
   const { set, size, invalidate } = useThree()
   const aspect = Math.max(size.width / Math.max(size.height, 1), 0.1)
-  const planFrustum = getPlanFrustum(aspect)
-  const roomCamera = getRoomCamera(aspect)
+  const planFrustum = getPlanFrustum(aspect, roomDimensions)
+  const roomCamera = getRoomCamera(aspect, roomDimensions)
   roomPosition.fromArray(roomCamera.position)
   roomTarget.fromArray(roomCamera.target)
 
@@ -87,13 +88,21 @@ export function CameraRig() {
     const controls = controlsRef.current
     if (!camera || !controls) return
 
-    const composition = getRoomCamera(aspect)
+    const composition = getRoomCamera(aspect, roomDimensions)
     camera.position.fromArray(composition.position)
     controls.target.fromArray(composition.target)
     camera.lookAt(controls.target)
     camera.updateProjectionMatrix()
     invalidate()
-  }, [aspect, invalidate, isTouring, size.height, size.width, viewMode])
+  }, [
+    aspect,
+    invalidate,
+    isTouring,
+    roomDimensions,
+    size.height,
+    size.width,
+    viewMode,
+  ])
 
   useEffect(() => {
     const handleFocus = (event: Event) => {

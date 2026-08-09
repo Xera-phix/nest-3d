@@ -1,4 +1,6 @@
-import { Copy, Trash2, X } from 'lucide-react'
+import { Copy, Ruler, Trash2, X } from 'lucide-react'
+import { ROOM_LIMITS } from '../domain/room'
+import type { RoomDimensions } from '../domain/types'
 import { useEditorStore } from '../store/editorStore'
 
 function rounded(value: number) {
@@ -7,21 +9,75 @@ function rounded(value: number) {
 
 export function Inspector() {
   const furniture = useEditorStore((state) => state.furniture)
+  const roomDimensions = useEditorStore((state) => state.roomDimensions)
   const selectedId = useEditorStore((state) => state.selectedId)
   const overlapIds = useEditorStore((state) => state.overlapIds)
   const select = useEditorStore((state) => state.select)
   const updatePosition = useEditorStore((state) => state.updatePosition)
   const updateRotation = useEditorStore((state) => state.updateRotation)
+  const updateRoomDimensions = useEditorStore(
+    (state) => state.updateRoomDimensions,
+  )
   const duplicate = useEditorStore((state) => state.duplicate)
   const remove = useEditorStore((state) => state.remove)
   const item = furniture.find((entry) => entry.id === selectedId)
 
   if (!item) {
+    const commitDimension = (
+      dimension: keyof RoomDimensions,
+      value: number,
+    ) => {
+      if (!Number.isFinite(value)) return
+      updateRoomDimensions({ ...roomDimensions, [dimension]: value })
+    }
+
+    const dimensionField = (
+      dimension: keyof RoomDimensions,
+      label: string,
+    ) => (
+      <label key={dimension}>
+        <span>{label}</span>
+        <input
+          key={`${dimension}-${roomDimensions[dimension]}`}
+          aria-label={`Room ${dimension}`}
+          type="number"
+          min={ROOM_LIMITS[dimension].min}
+          max={ROOM_LIMITS[dimension].max}
+          step="0.05"
+          defaultValue={roomDimensions[dimension]}
+          onBlur={(event) =>
+            commitDimension(dimension, event.currentTarget.valueAsNumber)
+          }
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') event.currentTarget.blur()
+          }}
+        />
+        <span className="field-unit">m</span>
+      </label>
+    )
+
     return (
-      <aside className="inspector inspector--empty" aria-label="Selection inspector">
-        <div className="empty-selection-mark" aria-hidden="true" />
-        <p>Select an object</p>
-        <span>Click furniture in the room or choose it from Objects.</span>
+      <aside className="inspector inspector--room" aria-label="Room dimensions inspector">
+        <div className="inspector-heading">
+          <div>
+            <span className="inspector-kind">Space</span>
+            <h2>Room</h2>
+          </div>
+          <Ruler size={18} aria-hidden="true" />
+        </div>
+        <div className="object-size" aria-label="Current room dimensions">
+          <span>{roomDimensions.width.toFixed(2)} m</span>
+          <span aria-hidden="true">×</span>
+          <span>{roomDimensions.depth.toFixed(2)} m</span>
+        </div>
+        <div className="inspector-section">
+          <span className="section-label">Dimensions</span>
+          <div className="room-field-grid">
+            {dimensionField('width', 'Width')}
+            {dimensionField('depth', 'Depth')}
+            {dimensionField('height', 'Height')}
+          </div>
+        </div>
       </aside>
     )
   }

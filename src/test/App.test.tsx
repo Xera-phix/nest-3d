@@ -37,6 +37,19 @@ describe('Afterglow editor shell', () => {
     )
   })
 
+  it('edits room dimensions and updates the project measurement', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const width = screen.getByRole('spinbutton', { name: 'Room width' })
+    await user.clear(width)
+    await user.type(width, '5.5')
+    await user.tab()
+
+    expect(useEditorStore.getState().roomDimensions.width).toBe(5.5)
+    expect(screen.getByText('5.50 × 3.40 m')).toBeInTheDocument()
+  })
+
   it('selects furniture accessibly and exposes precise inspector controls', async () => {
     const user = userEvent.setup()
     render(<App />)

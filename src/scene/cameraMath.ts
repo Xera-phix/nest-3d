@@ -1,5 +1,5 @@
 import { ROOM } from '../domain/room'
-import type { FurnitureItem } from '../domain/types'
+import type { FurnitureItem, RoomDimensions } from '../domain/types'
 
 export type VectorTuple = [number, number, number]
 
@@ -22,20 +22,36 @@ export const PLAN_CAMERA: CameraComposition = {
   target: [0, 0, 0],
 }
 
-  export function getRoomCamera(aspect: number): CameraComposition {
-    const distanceScale = Math.min(
-      1.25,
-      Math.max(1, 0.8 / Math.max(aspect, 0.1)),
-    )
+export function getRoomCamera(
+  aspect: number,
+  roomDimensions: RoomDimensions = ROOM,
+): CameraComposition {
+  const portraitScale = Math.min(
+    1.25,
+    Math.max(1, 0.8 / Math.max(aspect, 0.1)),
+  )
+  const roomScale = Math.max(
+    roomDimensions.width / ROOM.width,
+    roomDimensions.depth / ROOM.depth,
+    roomDimensions.height / ROOM.height,
+  )
+  const distanceScale = portraitScale * roomScale
+  const target: VectorTuple = [
+    0,
+    rounded(ROOM_CAMERA.target[1] * (roomDimensions.height / ROOM.height)),
+    0,
+  ]
 
-    return {
-      position: ROOM_CAMERA.position.map((value, index) => {
-        const target = ROOM_CAMERA.target[index]
-        return rounded(target + (value - target) * distanceScale)
-      }) as VectorTuple,
-      target: [...ROOM_CAMERA.target],
-    }
+  return {
+    position: ROOM_CAMERA.position.map((value, index) =>
+      rounded(
+        target[index] +
+          (value - ROOM_CAMERA.target[index]) * distanceScale,
+      ),
+    ) as VectorTuple,
+    target,
   }
+}
 
 export const TOUR_KEYFRAMES: TourKeyframe[] = [
   { time: 0, ...ROOM_CAMERA },
@@ -60,9 +76,12 @@ function rounded(value: number) {
   return Number(value.toFixed(4))
 }
 
-export function getPlanFrustum(aspect: number) {
-  const minimumWidth = ROOM.width + 0.8
-  const minimumHeight = ROOM.depth + 0.8
+export function getPlanFrustum(
+  aspect: number,
+  roomDimensions: RoomDimensions = ROOM,
+) {
+  const minimumWidth = roomDimensions.width + 0.8
+  const minimumHeight = roomDimensions.depth + 0.8
   const width = Math.max(minimumWidth, minimumHeight * aspect)
   const height = width / aspect
 
