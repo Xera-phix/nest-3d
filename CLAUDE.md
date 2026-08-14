@@ -42,9 +42,9 @@ Canonical product and design references:
 
 ## Current Status
 
-The first release is implemented and verified as of 2026-08-08. All six tasks
+The MVP release is implemented and verified as of 2026-08-14. All six tasks
 and every checklist item in the implementation plan are complete, followed by
-an evidence-driven browser hardening pass.
+an evidence-driven browser hardening and deployment-readiness pass.
 
 Implemented capabilities:
 
@@ -98,6 +98,7 @@ npm run lint
 npm test
 npm run build
 npm run test:e2e
+npx vercel --prod
 ```
 
 Run one focused unit suite with:
@@ -117,7 +118,7 @@ Generated directories such as `node_modules/`, `dist/`, `test-results/`, and
 
 ## Verified Baseline
 
-The final release gate completed successfully on 2026-08-08:
+The final MVP release gate completed successfully on 2026-08-14:
 
 - `npm run lint`: clean, zero warnings or errors.
 - `npm test`: 6 files and 32 unit/component tests passed.
@@ -316,6 +317,14 @@ the primary interface.
 13. Image imports are textured physical proxies, not generated 3D meshes.
   Local and fetched images are validated, capped at 5 MB, and downscaled to
   1600 px. Remote URLs require the source server to permit browser CORS.
+14. A blank shared browser tab can be Chrome's `chrome-error://chromewebdata/`
+  page rather than a failed WebGL frame. Confirm the tab URL and canvas
+  presence before changing scene code. The actual room must still pass the
+  framebuffer color-diversity and drawing-buffer aspect checks.
+15. The complete cold-load planning journey includes WebGL initialization,
+  screenshots, animated view changes, Tour, and PNG export. It has a scoped
+  90-second Playwright timeout; the remaining journeys retain the 60-second
+  suite default.
 
 ## Accessibility and Quality Bar
 

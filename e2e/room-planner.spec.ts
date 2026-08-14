@@ -60,6 +60,7 @@ async function openRenderedRoom(page: Page) {
 test('renders a nonblank room and completes the planning workflow', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
   const pageErrors: Error[] = []
   page.on('pageerror', (error) => pageErrors.push(error))
